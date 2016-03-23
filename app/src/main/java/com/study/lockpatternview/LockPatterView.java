@@ -62,9 +62,13 @@ public class LockPatterView extends View{
 
         // step2 : determine horizontal or vertical direction
         if(height > width) {
+            offsetX = 0;
             offsetY = (height - width) / 2;
+            height  = width;
         } else {
             offsetX = (width - height) / 2;
+            offsetY = 0;
+            width   = height;
         }
 
         // step3 : image resource
@@ -75,17 +79,17 @@ public class LockPatterView extends View{
         bitmap_line_error = BitmapFactory.decodeResource(getResources(), R.drawable.btn_line_error);
 
         // step4 : create points
-        points[0][0] = new Point(width / 4,    offsetY + width / 4);
-        points[0][1] = new Point(width / 2,    offsetY + width / 4);
-        points[0][2] = new Point(width / 4 *3, offsetY + width / 4);
+        points[0][0] = new Point(offsetX + width / 4,    offsetY + width / 4);
+        points[0][1] = new Point(offsetX + width / 2,    offsetY + width / 4);
+        points[0][2] = new Point(offsetX + width / 4 *3, offsetY + width / 4);
 
-        points[1][0] = new Point(width / 4,    offsetY + width / 4 * 2);
-        points[1][1] = new Point(width / 2,    offsetY + width / 4 * 2);
-        points[1][2] = new Point(width / 4 *3, offsetY + width / 4 * 2);
+        points[1][0] = new Point(offsetX + width / 4,    offsetY + width / 4 * 2);
+        points[1][1] = new Point(offsetX + width / 2,    offsetY + width / 4 * 2);
+        points[1][2] = new Point(offsetX + width / 4 *3, offsetY + width / 4 * 2);
 
-        points[2][0] = new Point(width / 4,    offsetY + width / 4 * 2);
-        points[2][1] = new Point(width / 2,    offsetY + width / 4 * 2);
-        points[2][2] = new Point(width / 4 *3, offsetY + width / 4 * 2);
+        points[2][0] = new Point(offsetX + width / 4,    offsetY + width / 4 * 3);
+        points[2][1] = new Point(offsetX + width / 2,    offsetY + width / 4 * 3);
+        points[2][2] = new Point(offsetX + width / 4 *3, offsetY + width / 4 * 3);
 
         // step5 : get bitmap radius
         bitmapR = bitmap_normal.getWidth() / 2;
