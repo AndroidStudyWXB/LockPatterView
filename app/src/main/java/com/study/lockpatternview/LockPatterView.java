@@ -5,13 +5,22 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by WXB506 on 2016/3/23.
  */
 public class LockPatterView extends View{
+
+    private static final int POINT_SIZE = 5;
 
     private Point[][] points = new Point[3][3];
 
@@ -20,6 +29,12 @@ public class LockPatterView extends View{
     private Bitmap bitmap_pressed, bitmap_normal, bitmap_error, bitmap_line, bitmap_line_error;
 
     private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    private float moveX, moveY;
+
+    private boolean isSelect, isFinish, movePoint;
+
+    private List<Point> pointList = new ArrayList<Point>();
 
     /*
     *  构造函数
@@ -99,7 +114,7 @@ public class LockPatterView extends View{
     }
 
     /*
-    *
+    * draw point
     */
     private void points2Canvas(Canvas canvas) {
         // i is index of row
@@ -151,6 +166,107 @@ public class LockPatterView extends View{
         public static double distance(Point a, Point b) {
             return Math.sqrt(Math.abs(a.x - b.x) * Math.abs(a.x - b.x)
                     + Math.abs(a.y - b.y) * Math.abs(a.y - b.y));
+        }
+
+        // overlay
+        public static boolean with(float pointX, float pointY, float r, float moveX, float moveY) {
+            return Math.sqrt((pointX - moveX) * (pointX - moveX)
+                    + (pointY - moveY) * (pointY - moveY)) < r;
+        }
+    }
+
+    /*
+    *  onTouch event
+    */
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        // step1 : get touch point
+        moveX = event.getX();
+        moveY = event.getY();
+
+        Point point = null;
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                resetPoint();
+                point = checkSelectPoint();
+                if(point != null) {
+                    isSelect = true;
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if(isSelect) {
+                    point = checkSelectPoint();
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                isFinish = true;
+                isSelect = false;
+                break;
+        }
+        // select multiple time
+        if(!isFinish && isSelect && points != null) {
+            if(crossPoint(point)) {
+                movePoint = true;
+            } else {
+                point.state = Point.STATE_PRESSED;
+                pointList.add(point);
+            }
+        }
+
+        // finish
+        if(isFinish) {
+            if(pointList.size() == 1) {
+                resetPoint();
+            } else if(pointList.size() < POINT_SIZE && pointList.size() > 2) {
+                errorPoint();
+            } else {
+
+            }
+        }
+
+        Log.d("test", "fuck");
+        return true;
+    }
+
+    /*
+    * check selected
+    */
+    private Point checkSelectPoint() {
+        for(int i = 0; i < points.length; i++) {
+            for(int j = 0; j < points[i].length; j++) {
+                Point point = points[i][j];
+                if(Point.with(point.x, point.y, bitmapR, moveX, moveY)) {
+                    return point;
+                }
+            }
+        }
+        return null;
+    }
+
+    /*
+    *  corsspoint
+    **/
+    private boolean crossPoint(Point point) {
+        if(pointList.contains(point)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /*
+    *  reDraw
+    */
+    public void resetPoint() {
+        pointList.clear();
+    }
+    /*
+    * error draw
+    */
+    public void errorPoint() {
+        for(Point point : pointList) {
+            point.state = Point.STATE_ERROR;
         }
     }
 }
