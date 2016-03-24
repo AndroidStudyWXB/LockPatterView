@@ -239,7 +239,7 @@ public class LockPatterView extends View{
                 if(onPatterChangeLister != null) {
                     onPatterChangeLister.onPatterStart(true);
                 }
-
+                Log.d("DOWN", "DOWN");
                 resetPoint();
                 point = checkSelectPoint();
                 if(point != null) {
@@ -260,7 +260,7 @@ public class LockPatterView extends View{
                 break;
         }
         // select multiple time
-        if(!isFinish && isSelect && points != null) {
+        if(!isFinish && isSelect && point != null) {
             if(crossPoint(point)) {
                 movePoint = true;
             } else {
