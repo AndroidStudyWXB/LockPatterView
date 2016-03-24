@@ -4,13 +4,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +35,10 @@ public class LockPatterView extends View{
     private boolean isSelect, isFinish, movePoint;
 
     private List<Point> pointList = new ArrayList<Point>();
+
+    private OnPatterChangeLister onPatterChangeLister;
+
+    private Matrix matrix = new Matrix();
 
     /*
     *  构造函数
@@ -65,6 +69,21 @@ public class LockPatterView extends View{
 
         // 绘制9个点
         points2Canvas(canvas);
+
+        Point a = null;
+        if(pointList.size() > 0) {
+            a = pointList.get(0);
+
+            for(int i = 0; i < pointList.size(); i++) {
+                Point b = pointList.get(i);
+                line2Canvas(canvas, a, b);
+                a = b;
+            }
+        }
+
+        if(movePoint) {
+            line2Canvas(canvas, a, new Point(moveX, moveY));
+        }
     }
 
     /*
@@ -146,6 +165,35 @@ public class LockPatterView extends View{
     }
 
     /*
+    * draw line
+    */
+    public void line2Canvas(Canvas canvas, Point a, Point b) {
+        // step1 : get length
+        float linelength = (float) Point.distance(a, b);
+        // step2 : get degree
+        float degree = getDegrees(a, b);
+        // step3 : rotate according to point a
+        canvas.rotate(degree, a.x, a.y);
+
+        if(a.state == Point.STATE_PRESSED) {
+            matrix.setScale(linelength / bitmap_line.getWidth(), 1);
+            matrix.postTranslate(a.x - bitmap_line.getWidth() / 2,
+                    a.y - bitmap_line.getHeight() / 2);
+            canvas.drawBitmap(bitmap_line, matrix, paint);
+        } else {
+            matrix.setScale(linelength / bitmap_line.getWidth(), 1);
+            matrix.postTranslate(a.x - bitmap_line.getWidth() / 2,
+                    a.y - bitmap_line.getHeight() / 2);
+            canvas.drawBitmap(bitmap_line_error, matrix, paint);
+        }
+        canvas.rotate(-degree, a.x, a.y);
+    }
+
+    public float getDegrees(Point a, Point b) {
+        return (float) Math.toDegrees(Math.atan2(b.y - a.y, b.x - a.x));
+    }
+
+    /*
     * self define point
     */
     public static class Point {
@@ -188,6 +236,10 @@ public class LockPatterView extends View{
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                if(onPatterChangeLister != null) {
+                    onPatterChangeLister.onPatterStart(true);
+                }
+
                 resetPoint();
                 point = checkSelectPoint();
                 if(point != null) {
@@ -197,6 +249,9 @@ public class LockPatterView extends View{
             case MotionEvent.ACTION_MOVE:
                 if(isSelect) {
                     point = checkSelectPoint();
+                    if(point == null) {
+                        movePoint = true;
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -220,10 +275,22 @@ public class LockPatterView extends View{
                 resetPoint();
             } else if(pointList.size() < POINT_SIZE && pointList.size() > 2) {
                 errorPoint();
+                if(onPatterChangeLister != null) {
+                    onPatterChangeLister.onPatterChange(null);
+                }
             } else {
-
+                if(onPatterChangeLister != null) {
+                    String pass = "";
+                    for(int i = 0; i < pointList.size(); i++) {
+                        pass = pass + pointList.get(i).index;
+                    }
+                    if(!TextUtils.isEmpty(pass)) {
+                        onPatterChangeLister.onPatterChange(pass);
+                    }
+                }
             }
         }
+        postInvalidate();
 
         Log.d("test", "fuck");
         return true;
@@ -267,6 +334,23 @@ public class LockPatterView extends View{
     public void errorPoint() {
         for(Point point : pointList) {
             point.state = Point.STATE_ERROR;
+        }
+    }
+
+    /*
+    *  monitier
+    */
+    public static interface OnPatterChangeLister {
+        void onPatterChange(String passwordStr);
+        void onPatterStart(boolean isStart);
+    }
+
+    /*
+    *  set moniter
+    */
+    public void SetOnPatterChangeLister(OnPatterChangeLister changeLister) {
+        if(changeLister != null) {
+            this.onPatterChangeLister = changeLister;
         }
     }
 }
